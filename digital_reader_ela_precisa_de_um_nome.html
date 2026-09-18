@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ela precisa de um nome - Crônica Ilustrada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        mist: {
+                            50: '#f4f7f8',
+                            100: '#e3e9ed',
+                            200: '#c8d5de',
+                            300: '#a2b9c7',
+                            400: '#7599ae',
+                            500: '#557d95',
+                            600: '#42647a',
+                            700: '#385265',
+                            800: '#314555',
+                            900: '#2c3b48',
+                            950: '#1a242d',
+                        },
+                        paper: {
+                            light: '#fbf9f5',
+                            dark: '#12181f'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Lora', 'Georgia', 'serif'],
+                        display: ['Cinzel', 'serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .mist-bg {
+            background: linear-gradient(180deg, rgba(244,247,248,0.8) 0%, rgba(227,233,237,0.4) 50%, rgba(244,247,248,1) 100%);
+        }
+
+        .dark .mist-bg {
+            background: linear-gradient(180deg, rgba(26,36,45,0.9) 0%, rgba(18,24,31,0.6) 50%, rgba(18,24,31,1) 100%);
+        }
+
+        /* Ambient Fog Canvas Overlay */
+        #fog-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.35;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        /* Book reading page effect */
+        .book-page-shadow {
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07);
+        }
+        .dark .book-page-shadow {
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .drop-cap::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 3.8rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.6rem;
+            padding-top: 0.2rem;
+            color: #42647a;
+        }
+        .dark .drop-cap::first-letter {
+            color: #a2b9c7;
+        }
+    </style>
+</head>
+<body class="bg-paper-light dark:bg-paper-dark text-slate-800 dark:text-slate-200 font-serif antialiased transition-colors duration-500 min-h-screen relative selection:bg-mist-300 selection:text-slate-900">
+
+    <!-- Fog Canvas Effect -->
+    <canvas id="fog-canvas"></canvas>
+
+    <header class="fixed top-0 left-0 right-0 z-50 bg-paper-light/80 dark:bg-paper-dark/80 backdrop-blur-md border-b border-mist-200/60 dark:border-mist-800/60 transition-all duration-300 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <a href="#top" class="font-display font-semibold tracking-wider text-sm md:text-base text-mist-800 dark:text-mist-200 flex items-center gap-2">
+                <i class="fa-solid font-normal fa-water text-mist-500"></i>
+                <span>Ela Precisa de Um Nome</span>
+            </a>
+
+            <!-- Control Buttons -->
+            <div class="flex items-center gap-2 md:gap-4 font-sans text-xs">
+                <!-- Ambient Audio Control -->
+                <button id="ambient-toggle" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-mist-100 dark:bg-mist-900/80 hover:bg-mist-200 dark:hover:bg-mist-800 text-mist-800 dark:text-mist-200 transition-colors" title="Som Ambiente de Rio/Neblina">
+                    <i id="audio-icon" class="fa-solid fa-volume-xmark text-slate-500"></i>
+                    <span id="audio-label" class="hidden sm:inline font-medium">Som Ambiente</span>
+                </button>
+
+                <!-- Font Size Controls -->
+                <div class="hidden sm:flex items-center bg-mist-100 dark:bg-mist-900/80 rounded-full p-1 border border-mist-200/50 dark:border-mist-800/50">
+                    <button id="btn-text-sm" class="px-2 py-0.5 rounded-full hover:bg-white dark:hover:bg-slate-700 font-bold transition-colors">A-</button>
+                    <button id="btn-text-md" class="px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 font-bold transition-colors">A</button>
+                    <button id="btn-text-lg" class="px-2 py-0.5 rounded-full hover:bg-white dark:hover:bg-slate-700 font-bold transition-colors">A+</button>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button id="theme-toggle" class="p-2 rounded-full bg-mist-100 dark:bg-mist-900/80 text-mist-800 dark:text-mist-200 hover:bg-mist-200 dark:hover:bg-mist-800 transition-colors" title="Alternar Tema">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline text-amber-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section id="top" class="min-h-screen pt-28 pb-16 px-4 flex flex-col justify-center items-center relative mist-bg overflow-hidden">
+        <div class="max-w-3xl mx-auto text-center z-20 fade-in-up">
+            <span class="font-sans text-xs uppercase tracking-[0.3em] text-mist-600 dark:text-mist-400 mb-4 block font-semibold">Crônica Ilustrada</span>
+            <h1 class="font-display text-4xl sm:text-5xl md:text-6xl font-normal tracking-wide text-slate-900 dark:text-slate-100 mb-6 leading-tight">
+                Ela precisa de um nome
+            </h1>
+            <div class="w-16 h-0.5 bg-mist-400 dark:bg-mist-600 mx-auto mb-6"></div>
+            <p class="font-serif italic text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-xl mx-auto font-light leading-relaxed">
+                Uma narrativa sensível sobre invisibilidade, acolhimento e a força de ser reconhecido na escuridão.
+            </p>
+            
+            <div class="mt-12">
+                <a href="#inicio" class="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-mist-700 dark:bg-mist-600 hover:bg-mist-800 dark:hover:bg-mist-500 text-white font-sans text-sm tracking-wider uppercase transition-all shadow-md hover:shadow-lg">
+                    <span>Iniciar Leitura</span>
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="absolute bottom-6 left-0 right-0 text-center text-xs text-mist-500 dark:text-mist-400 font-sans tracking-widest z-20 uppercase">
+            Aperte a tecla M ou use o botão para ligar o áudio ambiente
+        </div>
+    </section>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-12 relative z-20">
+        
+        <!-- Reader Container with selectable font sizing -->
+        <article id="story-container" class="space-y-24 text-base sm:text-lg md:text-xl leading-relaxed transition-all duration-300">
+
+            <!-- SECTION 1 -->
+            <section id="inicio" class="space-y-8 fade-in-up">
+                <p class="drop-cap leading-relaxed">
+                    A noite já tinha virado madrugada quando saí para pegar a balsa. A escuridão era de um tom azul sereno, com o brilho tímido da lua desaparecendo atrás das nuvens. O rio estava coberto pela neblina fria e úmida que me acompanharia pelo resto do dia.
+                </p>
+
+                <!-- Illustration 1 -->
+                <figure class="my-10 space-y-3 group">
+                    <div class="overflow-hidden rounded-xl border border-mist-200 dark:border-mist-800/80 book-page-shadow bg-mist-100 dark:bg-mist-900">
+                        <img src="https://lh3.googleusercontent.com/gg/ACRwjatYiD-7twCEzkYytTnBAkiWQHmAmiUyMBhDf7TyY-vlRzkQ4qmVUJyla5R02jefjIH2R2CwISwnu50Ot5uNbSzizbnWAZkS7u-QGnIeHpEKLyY9uqLl5kAROapSpDosNEqGljX5UEHTVdQlk6ZHknisZQflhs3VQfuDPuWLsNozcCzymIwfBz0wmxTh4X_gThKjs-icrbGNoM9eL8FAEJSZW56hJ-fPaEKTxtAfyoW6VOLYaH0aT22kwYoybBlsyvTmJ1oUGzclq8dLNGjiDbE2p5Y04M9iO9ZwEw6jsG-bD1M_8CTwQ3NjmD2E54y0KZ3tb6vcPQ4m9JyKk4szyJA=s0" 
+                             alt="A balsa na neblina ao amanhecer" 
+                             class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-[1.02]">
+                    </div>
+                    <figcaption class="text-center font-serif italic text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                        A travessia na madrugada serena sobre o rio velado pela neblina fria.
+                    </figcaption>
+                </figure>
+
+                <p>
+                    Na balsa, vi os mesmos rostos cansados e ocupados como o meu, exceto por um menininho de olhar manso, abraçado a um bebezinho enrolado em uma manta e ignorado por todos. Tentei ignorá-lo também, mas o menino já havia me avistado.
+                </p>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Senhor, com licença. Senhor!</p>
+                </div>
+
+                <p>Resisti, fingindo que não o via.</p>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Senhor! O senhor poderia pagar pela nossa passagem, por gentileza?</p>
+                </div>
+
+                <p>
+                    Insisti em não me envolver, mas, quando percebi o menino descalço e com poucas roupas, agarrado tão firmemente ao bebê, tive que responder.
+                </p>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Sim, rapaz, eu pago pela passagem de vocês.</p>
+                </div>
+
+                <p>
+                    O menino esboçou um sorriso de alívio, agradeceu gentilmente e se pôs a ninar a criança em seu colo.
+                </p>
+            </section>
+
+            <!-- SECTION 2 -->
+            <section class="space-y-8 fade-in-up">
+                <!-- Illustration 2 -->
+                <figure class="my-10 space-y-3 group">
+                    <div class="overflow-hidden rounded-xl border border-mist-200 dark:border-mist-800/80 book-page-shadow bg-mist-100 dark:bg-mist-900">
+                        <img src="https://lh3.googleusercontent.com/gg/ACRwjavcwyoUBACOQGjTIE9ErwmW8r9UGarEsyPsE_HqV2g-AbpkL2h5x-5kgFXAgGHFRLmhXelkx9AHqguvpm1yvbnrwrHRwvy2uGVzsuVAq2m4tAKhexepRHMRL1PRlYyEZ6BHfmtzokIkumc8ugcgDlJ8JNHB1PjK95zkiDfpTbN8MU0rZgmcmhJhSIPYhbNaOzXSCtvXnBttQMuLvwf2tCg-ffFtvSMoTgH5RyyvqhQvj564P4ogJWkkNl83KPzs0-vQBakeUKCu3SrwfwnFLoGzEktc_RD6ePvsFXJO0sKWT1ctcc-GZiMpzXICCHU4LdvkSNPKc3hepOjuM2xwOIeB=s0" 
+                             alt="O garotinho descalço segurando o bebê no colo" 
+                             class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-[1.02]">
+                    </div>
+                    <figcaption class="text-center font-serif italic text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                        "Eu acabei de conhecê-la", anunciou o garotinho com uma sabedoria precoce.
+                    </figcaption>
+                </figure>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Eu acabei de conhecê-la — <span class="not-italic">anunciou o garotinho, com mais maturidade do que aparentava ter.</span> — Ouvi o choro dessa pequena enquanto passava na outra cidade. Ela é tão bonita, deve ser uma menina — <span class="not-italic">disse ingenuamente.</span></p>
+                </div>
+
+                <p>Com o cenho franzido, perguntei:</p>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Como assim, rapaz? Onde estão os pais dessa bebê?</p>
+                </div>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Eu não sei — <span class="not-italic">respondeu ele.</span> — Perguntei nas casas ao redor, mas ninguém me respondeu. Ela não tem pais, assim como eu. Por isso estou levando-a para o orfanato comigo. Ela vai crescer e vamos brincar juntos. Vou ensiná-la a andar e falar, assim vamos poder andar juntos pela cidade.</p>
+                </div>
+
+                <p>
+                    Sorriu levemente enquanto olhava para a pequena, toda embrulhada e quieta.
+                </p>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Espero que seja assim — <span class="not-italic">respondi.</span></p>
+                </div>
+
+                <!-- Callout Quote -->
+                <div class="my-12 py-8 px-6 sm:px-10 rounded-2xl bg-mist-100/80 dark:bg-mist-900/40 border border-mist-300/50 dark:border-mist-800/50 text-center font-display text-lg sm:text-xl md:text-2xl text-mist-900 dark:text-mist-100 italic leading-relaxed">
+                    "Foi então que percebi a ironia: o único que resgatou a criança abandonada foi outra criança abandonada."
+                </div>
+            </section>
+
+            <!-- SECTION 3 -->
+            <section class="space-y-8 fade-in-up">
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Senhor — <span class="not-italic">o menino interrompeu o silêncio</span> —, ela precisa de um nome. O que o senhor acha de Isabela?</p>
+                </div>
+
+                <div class="pl-4 sm:pl-6 border-l-2 border-mist-400 dark:border-mist-600 space-y-2 italic text-slate-700 dark:text-slate-300">
+                    <p>— Acho um bom nome para ela — <span class="not-italic">disse, sorrindo, enquanto imaginava a moça que um dia aquela bebê se tornaria.</span></p>
+                </div>
+
+                <!-- Illustration 3 -->
+                <figure class="my-10 space-y-3 group">
+                    <div class="overflow-hidden rounded-xl border border-mist-200 dark:border-mist-800/80 book-page-shadow bg-mist-100 dark:bg-mist-900">
+                        <img src="https://lh3.googleusercontent.com/gg/ACRwjasLS8cq6P66wRxVACAv7hQ2vY2EbCabOPmsZoBm0-Ow5N7sp-8hpqD9xo3W9yi3SxXwKXN4wD11gyuFqBULps1dXSiXysUFLgoNeRsxUn7N_EWrx8SQI2mS0fLtsmRxEwg3H84rhIn94X4jNVTuMX0GsRRPzSnsaDXYfejNxRzIqRlsZPfEgdGiNxM5k5zumeCRpfaUaW96PUydLN8c73NJCDOpReXVgSHh-GrSespnwjTj-F2qLLukK7ObU6RC8sqoLxRz4LZudKZBre0SkuVw-Gwy470XuvYMaNuBj2GIkh0LhuOWJLsQ7Cuw5MUVDuR3DedOVwrHOAH5R6zrpSmQ=s0" 
+                             alt="Conversa na balsa no momento da escolha do nome" 
+                             class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-[1.02]">
+                    </div>
+                    <figcaption class="text-center font-serif italic text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                        O garoto, esperançoso, batiza a pequena Isabela durante a travessia.
+                    </figcaption>
+                </figure>
+
+                <p>
+                    Mas ela estava quieta, muito quieta, como se só restasse o embrulho. O menino, porém, não parecia perceber.
+                </p>
+
+                <p>
+                    A balsa chegou à cidade. Paguei pelas passagens e me despedi das crianças abandonadas. Observei de longe o menino, esperançoso, seguindo em direção ao orfanato, até ser coberto pela neblina.
+                </p>
+
+                <!-- Illustration 4 -->
+                <figure class="my-10 space-y-3 group">
+                    <div class="overflow-hidden rounded-xl border border-mist-200 dark:border-mist-800/80 book-page-shadow bg-mist-100 dark:bg-mist-900">
+                        <img src="https://lh3.googleusercontent.com/gg/ACRwjauYiaa8Fk0l2feK60hgscqOTstArmf2IaKPUwRbBBF8GfdUJo8QHqitdPL2isjqH7j5RG516PMWRzkQvFbeMHzRK8VEtOqhU6dZ6uMe-fZnG5tagqGRf-rqVKcbH7J_-t46YfML9gwsttHHVvSNGHahHBtH4DhDpBYoQ5zBoAM0Xb1ota_etPIOwo2avAVl_0bi6-Tg3zicukomoJZ_hwNaoHHsodUPhqL6ko9IAlsGyQuIusgvaQuG8NkickUCVAo4gYauMH4x8KtiQzHQIYXabW8WyxDu6gzLRfCgDDJjl_4dq79IljZVP0kYg_0ltLAsrDjrPgO-wJJX-VmVFXuG=s0" 
+                             alt="Criança descalça carregando o bebê e sumindo na neblina" 
+                             class="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-[1.02]">
+                    </div>
+                    <figcaption class="text-center font-serif italic text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                        Seguindo em direção ao orfanato, aos poucos coberto pela neblina.
+                    </figcaption>
+                </figure>
+
+                <!-- Final Impact Sentence -->
+                <p class="text-lg sm:text-xl md:text-2xl font-serif text-slate-900 dark:text-slate-100 pt-6 leading-relaxed font-normal">
+                    O garoto talvez não tivesse entendido, mas, naquela madrugada, ao dar um nome àquela menina, ele havia feito por ela algo que ninguém havia feito antes: <strong class="font-semibold underline decoration-mist-400 dark:decoration-mist-500 underline-offset-8">reconhecido que ela existia</strong>.
+                </p>
+            </section>
+
+        </article>
+
+        <!-- Divider -->
+        <div class="w-full h-px bg-mist-200 dark:bg-mist-800 my-16"></div>
+
+        <section class="text-center space-y-6 fade-in-up font-sans">
+            <h3 class="font-display text-xl text-slate-800 dark:text-slate-200">Gostou dessa leitura?</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+                Compartilhe esta crônica ou guarde o link para ler sempre que desejar.
+            </p>
+
+            <div class="flex justify-center items-center gap-3">
+                <button id="copy-link-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-mist-100 dark:bg-mist-900 hover:bg-mist-200 dark:hover:bg-mist-800 text-mist-800 dark:text-mist-200 text-xs font-semibold transition-colors">
+                    <i class="fa-regular fa-copy"></i>
+                    <span id="copy-btn-text">Copiar Link</span>
+                </button>
+                <a href="#top" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-mist-700 dark:bg-mist-600 hover:bg-mist-800 dark:hover:bg-mist-500 text-white text-xs font-semibold transition-colors">
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span>Voltar ao Topo</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 py-8 border-t border-mist-200/60 dark:border-mist-800/60 text-center font-sans text-xs text-mist-500 dark:text-mist-400">
+        <p>Ela precisa de um nome &copy; Crônica e Ilustrações em Edição Digital</p>
+    </footer>
+
+    <script>
+        /* Interactive Web Application Scripts */
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Dark Mode Toggle
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            
+            // Sync initial state
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+            });
+
+            // 2. Font Size Controls
+            const storyContainer = document.getElementById('story-container');
+            const btnSm = document.getElementById('btn-text-sm');
+            const btnMd = document.getElementById('btn-text-md');
+            const btnLg = document.getElementById('btn-text-lg');
+
+            const setFontSize = (sizeClass, activeBtn) => {
+                storyContainer.classList.remove('text-base', 'sm:text-lg', 'md:text-xl', 'text-sm', 'sm:text-base', 'md:text-lg', 'text-lg', 'sm:text-xl', 'md:text-2xl');
+                storyContainer.classList.add(...sizeClass);
+
+                [btnSm, btnMd, btnLg].forEach(btn => {
+                    btn.classList.remove('bg-white', 'dark:bg-slate-700');
+                });
+                activeBtn.classList.add('bg-white', 'dark:bg-slate-700');
+            };
+
+            btnSm.addEventListener('click', () => setFontSize(['text-sm', 'sm:text-base', 'md:text-lg'], btnSm));
+            btnMd.addEventListener('click', () => setFontSize(['text-base', 'sm:text-lg', 'md:text-xl'], btnMd));
+            btnLg.addEventListener('click', () => setFontSize(['text-lg', 'sm:text-xl', 'md:text-2xl'], btnLg));
+
+            // 3. Web Audio API Ambient River/Mist Sound Generator
+            let audioCtx = null;
+            let isPlaying = false;
+            let noiseNode = null;
+            let filterNode = null;
+            let gainNode = null;
+
+            const audioToggleBtn = document.getElementById('ambient-toggle');
+            const audioIcon = document.getElementById('audio-icon');
+            const audioLabel = document.getElementById('audio-label');
+
+            function initAudio() {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+
+                    // Create pink/brown ambient water noise buffer
+                    const bufferSize = audioCtx.sampleRate * 3;
+                    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+                    let lastOut = 0.0;
+
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        // Filter white noise to create soft river/mist rumble sound
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5;
+                    }
+
+                    noiseNode = audioCtx.createBufferSource();
+                    noiseNode.buffer = noiseBuffer;
+                    noiseNode.loop = true;
+
+                    // Lowpass filter for calm river effect
+                    filterNode = audioCtx.createBiquadFilter();
+                    filterNode.type = 'lowpass';
+                    filterNode.frequency.setValueAtTime(320, audioCtx.currentTime);
+
+                    // Gain Node for smooth volume control
+                    gainNode = audioCtx.createGain();
+                    gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
+
+                    noiseNode.connect(filterNode);
+                    filterNode.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    noiseNode.start();
+                } catch(e) {
+                    console.log('Audio Context not supported or allowed', e);
+                }
+            }
+
+            function toggleAudio() {
+                if (!audioCtx) {
+                    initAudio();
+                }
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                if (!isPlaying) {
+                    gainNode.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 2);
+                    audioIcon.className = 'fa-solid fa-volume-high text-mist-500';
+                    audioLabel.textContent = 'Som Ligado';
+                    isPlaying = true;
+                } else {
+                    gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+                    setTimeout(() => {
+                        audioIcon.className = 'fa-solid fa-volume-xmark text-slate-500';
+                        audioLabel.textContent = 'Som Ambiente';
+                        isPlaying = false;
+                    }, 1500);
+                }
+            }
+
+            audioToggleBtn.addEventListener('click', toggleAudio);
+
+            // M key shortcut for audio
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'm') {
+                    toggleAudio();
+                }
+            });
+
+            // 4. Scroll Fade-in Intersection Observer
+            const observerOptions = {
+                root: null,
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.fade-in-up').forEach(el => {
+                observer.observe(el);
+            });
+
+            // 5. Copy Link Button
+            const copyBtn = document.getElementById('copy-link-btn');
+            const copyBtnText = document.getElementById('copy-btn-text');
+
+            copyBtn.addEventListener('click', () => {
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = window.location.href;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+
+                copyBtnText.textContent = 'Link Copiado!';
+                setTimeout(() => {
+                    copyBtnText.textContent = 'Copiar Link';
+                }, 2500);
+            });
+
+            // 6. Subtle Canvas Particle Mist Effect
+            const canvas = document.getElementById('fog-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.radius = Math.random() * 80 + 40;
+                    this.vx = Math.random() * 0.3 - 0.15;
+                    this.vy = Math.random() * 0.1 - 0.05;
+                    this.alpha = Math.random() * 0.15 + 0.05;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
+                        this.reset();
+                    }
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                    
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const color = isDark ? '200, 213, 222' : '255, 255, 255';
+
+                    gradient.addColorStop(0, `rgba(${color}, ${this.alpha})`);
+                    gradient.addColorStop(1, `rgba(${color}, 0)`);
+
+                    ctx.fillStyle = gradient;
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < 25; i++) {
+                particles.push(new Particle());
+            }
+
+            function animateFog() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                requestAnimationFrame(animateFog);
+            }
+
+            animateFog();
+        });
+    </script>
+</body>
+</html>
